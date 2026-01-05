@@ -5,11 +5,15 @@
 // Updated :
 // History:
 // 2026-01-01  Initial version
+// 2025-01-05  Added fluctuation function
 // ------------------------------------------------------------
 
 module gn_mdl_axis_slv #(
-    parameter P_DWIDTH    = 32'd32
-   ,parameter P_MAX_WORDS = 32'd256
+     parameter P_DWIDTH                 = 32'd32
+    ,parameter P_MAX_WORDS              = 32'd256
+    ,parameter int P_TRDY_MIN_CYC       = 1
+    ,parameter int P_TRDY_MAX_CYC       = 8
+    ,parameter int P_TRDY_ASSERT_PCT    = 100
 )(
      input  logic                   clk
     ,input  logic                   reset_n 
@@ -26,15 +30,31 @@ module gn_mdl_axis_slv #(
     logic [P_DWIDTH-1:0] rx_queue[$];
     logic [P_DWIDTH-1:0] rx_shadow [0:P_MAX_WORDS-1];
     int rx_shadow_size;
+    int tready_cnt;
 
-    // gen tready
+
     always @(posedge clk) begin
         if (!reset_n) begin
-            rx_axis_tready <= 1'b0;
+            rx_axis_tready  <= 1'b0;
         end else begin
-            rx_axis_tready <= 1'b1;
+            if (tready_cnt == 0) begin
+                rx_axis_tready <= ($urandom_range(0,99) < P_TRDY_ASSERT_PCT);
+            end
         end
     end
+
+    always @(posedge clk) begin
+        if (!reset_n) begin
+            tready_cnt      <= 0;
+        end else begin
+            if (tready_cnt == 0) begin
+                tready_cnt <= $urandom_range(P_TRDY_MIN_CYC, P_TRDY_MAX_CYC);
+            end else begin
+                tready_cnt <= tready_cnt - 1;
+            end
+        end
+    end
+
 
     // capture tdata
     always @(posedge clk) begin
