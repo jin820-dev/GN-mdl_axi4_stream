@@ -7,17 +7,38 @@ SystemVerilog AXI4-Stream Mst/Slv model for simulation.
 - License: MIT
 
 ## Overview
-This repository provides AXI4-Stream master and slave models
-for simulation and verification.
+This repository provides **AXI4-Stream master and slave models**
+intended for **simulation and verification environments**.
 
-The models are intended to be used in testbenches to drive and
-monitor AXI4-Stream interfaces.
+The models are designed to:
+- Drive AXI4-Stream transactions from test scenarios
+- Apply realistic backpressure behavior
+- Validate DUT protocol handling when combined with assertions
+
+These models are **not cycle-accurate hardware implementations**,
+but verification-oriented behavioral models.
 
 ## Features
 - AXI4-Stream master model
 - AXI4-Stream slave model
 - Task-based transaction control
+- Burst / gap style `tready` backpressure (slave model)
 - Designed for reuse across multiple DUTs
+
+## Model Behavior Notes
+
+### Master Model
+- Drives `tvalid` and `tdata` using task-based APIs
+- **Keeps `tdata` stable while `tvalid=1 && tready=0`**
+- Holds `tvalid` asserted until handshake completes
+- Intended to follow AXI4-Stream protocol strictly
+
+### Slave Model
+- Drives `tready` to apply backpressure to the DUT
+- `tready` behavior can include:
+  - Continuous ready
+  - Burst / gap backpressure patterns (tready asserted and deasserted for multiple consecutive cycles)
+- Backpressure is intentionally applied to expose protocol violations
 
 ## Directory Structure
 ```
@@ -48,6 +69,13 @@ Typical usage:
 - Instantiate master/slave model modules
 - Include task files from `lib/`
 - Drive transactions from test scenarios
+- Observe DUT behavior via assertions and scoreboards
+
+## Notes
+- These models assume **AXI4-Stream compliant DUT behavior**.
+- Master tasks must not change `tdata` while stalled.
+- Slave backpressure is intentionally active to expose corner cases.
+- The models are designed for verification robustness rather than performance.
 
 ## License
 This project is licensed under the MIT License.
